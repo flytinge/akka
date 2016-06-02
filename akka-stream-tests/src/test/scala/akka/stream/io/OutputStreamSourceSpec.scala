@@ -48,7 +48,7 @@ class OutputStreamSourceSpec extends AkkaSpec(UnboundedMailboxConfig) {
           t.getLockName != null &&
           t.getLockName.startsWith("java.util.concurrent.locks.AbstractQueuedSynchronizer"))
 
-    awaitAssert(threadsBlocked should ===(Seq()), 3.seconds)
+    awaitAssert(threadsBlocked should ===(Seq()), 10.seconds, interval = 500.millis)
   }
 
   "OutputStreamSource" must {
@@ -175,6 +175,9 @@ class OutputStreamSourceSpec extends AkkaSpec(UnboundedMailboxConfig) {
     }
 
     "not leave blocked threads" in {
+      // make sure previous tests didn't leak
+      assertNoBlockedThreads()
+
       val (outputStream, probe) = StreamConverters.asOutputStream(timeout)
         .toMat(TestSink.probe[ByteString])(Keep.both).run()(materializer)
 
